@@ -1,3 +1,4 @@
+// Only one state with two fiters --> Covid & Water
 import { browser } from 'k6/experimental/browser';
 import { check } from 'k6';
 import http from 'k6/http';
