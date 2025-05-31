@@ -7,7 +7,7 @@ export const options = {
   scenarios: {
     west_bengal_users: {
       executor: 'per-vu-iterations',
-      vus: 1,
+      vus: 20,
       iterations: 1,
       options: {
         browser: {
@@ -18,7 +18,7 @@ export const options = {
     },
     maharashtra_users: {
       executor: 'per-vu-iterations',
-      vus: 1,
+      vus: 20,
       iterations: 1,
       options: {
         browser: {

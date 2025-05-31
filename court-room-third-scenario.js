@@ -12,7 +12,8 @@ export const options = {
           type: 'chromium',
         },
       },
-      iterations: 1,
+      vus: 10,
+      iterations: 10,
     },
   },
 };

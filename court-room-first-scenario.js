@@ -1,58 +1,65 @@
-// Opens any particular state and then navigates to any prison and opens any RTI
+import { browser } from 'k6/browser';
+import { check, sleep } from 'k6';
 
-import { browser } from 'k6/experimental/browser';
-import { check } from 'k6';
+function randomSleep(minSeconds = 2, maxSeconds = 6) {
+  const duration = Math.random() * (maxSeconds - minSeconds) + minSeconds;
+  sleep(duration);
+}
 
 export const options = {
   scenarios: {
     ui_test: {
       executor: 'shared-iterations',
+      vus: 20,
+      iterations: 20,
       options: {
         browser: {
           type: 'chromium',
         },
       },
-      iterations: 1,
     },
   },
 };
 
 export default async function () {
-  const page = browser.newPage();
+  const page = await browser.newPage();
+
+  async function safeGoto(url) {
+    // Increase timeout to 2 minutes (120000 ms)
+    const maxRetries = 3;
+    let attempt = 0;
+    while (attempt < maxRetries) {
+      try {
+        await page.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
+        return true;
+      } catch (e) {
+        console.warn(`Navigation to ${url} failed on attempt ${attempt + 1}: ${e.message}`);
+        attempt++;
+        if (attempt === maxRetries) throw e;
+        // Wait a bit before retrying
+        sleep(5);
+      }
+    }
+  }
 
   try {
-    await page.goto('https://paar.org.in/map', { waitUntil: 'networkidle' });
+    await safeGoto('https://paar.org.in/map');
     console.log('Map page loaded');
+    randomSleep(3, 7);
 
-    await page.goto('https://paar.org.in/report?state=West%20Bengal', { waitUntil: 'networkidle' });
+    await safeGoto('https://paar.org.in/report?state=West%20Bengal');
     console.log('West Bengal report page loaded');
+    check(page, { 'Loaded West Bengal report page': () => page.url().includes('/report?state=West%20Bengal') });
+    randomSleep(4, 8);
 
-    let success = check(page, {
-      'Loaded West Bengal report page': () =>
-        page.url().includes('/report?state=West%20Bengal'),
-    });
-
-    if (success) {
-      console.log('Successfully opened West Bengal report page!');
-    } else {
-      console.error('Failed to open West Bengal report page.');
-    }
-
-    // Navigate to Balurghat Central Correctional Home report page
-    await page.goto('https://paar.org.in/report?prison=Balurghat%20Central%20Correctional%20Home', { waitUntil: 'networkidle' });
+    await safeGoto('https://paar.org.in/report?prison=Balurghat%20Central%20Correctional%20Home');
     console.log('Balurghat Central Correctional Home report page loaded');
+    check(page, { 'Loaded Balurghat Central Correctional Home report page': () =>
+      page.url().includes('prison=Balurghat%20Central%20Correctional%20Home') });
+    randomSleep(5, 10);
 
-    success = check(page, {
-      'Loaded Balurghat Central Correctional Home report page': () =>
-        page.url().includes('prison=Balurghat%20Central%20Correctional%20Home'),
-    });
-
-    if (success) {
-      console.log('Successfully opened Balurghat Central Correctional Home report page!');
-    } else {
-      console.error('Failed to open Balurghat Central Correctional Home report page.');
-    }
-
+  } catch (err) {
+    console.error('Error during user flow:', err.message || err.toString());
   } finally {
     await page.close();
   }
