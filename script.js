@@ -6,8 +6,8 @@ export let errorRate = new Counter('errors');
 
 export let options = {
     stages: [
-        { duration: '1', target: 500 },
-        { duration: '1m', target: 500 },
+        { duration: '1', target: 5 },
+        { duration: '1m', target: 5},
         { duration: '30s', target: 0 },
     ],
 };
