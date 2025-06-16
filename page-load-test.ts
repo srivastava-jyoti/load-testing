@@ -1,5 +1,6 @@
 import { browser } from 'k6/browser';
 import { check } from 'k6';
+import { Counter } from 'k6/metrics';
 
 export const options = {
   scenarios: {
@@ -10,11 +11,11 @@ export const options = {
     executor: 'ramping-vus',
     startVUs: 0,
     stages: [
-      { duration: '2s', target: 5 },
-      { duration: '2s', target: 10 },
-      { duration: '2s', target: 15 },
-      { duration: '2s', target: 20 },
-      { duration: '5s', target: 30 },
+      { duration: '3s', target: 3 },
+      { duration: '3s', target: 6 },
+      { duration: '3s', target: 9 },
+      { duration: '3s', target: 12 },
+      { duration: '5s', target: 18 },
     ],
     gracefulRampDown: '5s',
       options: {
@@ -42,12 +43,16 @@ export const options = {
   },
 };
 
+const mapPageHits = new Counter('map_page_hits');
+const statePageHits = new Counter('state_page_hits');
+
 export default async function () {
   const page = await browser.newPage();
 
   try {
     // MAP PAGE
-    const mapRes = await page.goto('https://paar.org.in', {
+    mapPageHits.add(1);
+    const mapRes = await page.goto('https://paar.org.in/map', {
       waitUntil: 'domcontentloaded',
       timeout: 60000,
     });
@@ -59,7 +64,8 @@ export default async function () {
     await page.waitForTimeout(2000);
 
     // STATE PAGE (reuse same page)
-    const stateRes = await page.goto('https://www.paar.org.in/report?state=Uttarakhand', {
+    statePageHits.add(1);
+    const stateRes = await page.goto('https://paar.org.in/report?state=Uttarakhand', {
       waitUntil: 'domcontentloaded',
       timeout: 60000,
     });
