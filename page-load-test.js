@@ -5,19 +5,20 @@ import { Counter } from 'k6/metrics';
 export const options = {
   scenarios: {
     browser_load: {
-    //   executor: 'per-vu-iterations',
-    //   vus: 40,
-    //   iterations: 1,
-    executor: 'ramping-vus',
-    startVUs: 0,
-    stages: [
-      { duration: '3s', target: 3 },
-      { duration: '3s', target: 6 },
-      { duration: '3s', target: 9 },
-      { duration: '3s', target: 12 },
-      { duration: '5s', target: 18 },
-    ],
-    gracefulRampDown: '5s',
+      // executor: 'per-vu-iterations',
+      // vus: 24,
+      // iterations: 1,
+      executor: 'ramping-vus',
+      startVUs: 0,
+      stages: [
+        { duration: '0.5s', target: 3 },
+        { duration: '0.5', target: 6 },
+        { duration: '0.5', target: 9 },
+        { duration: '0.5', target: 12 },
+        { duration: '1s', target: 16 },
+        { duration: '60s', target: 16 },
+      ],
+      gracefulRampDown: '5s',
       options: {
         browser: {
           type: 'chromium',
@@ -60,35 +61,39 @@ export default async function () {
     check(mapRes, {
       'Map page loaded successfully': (r) => r !== null && r.status() === 200,
     });
+    console.log('After mapResponse..........', mapRes);
 
     await page.waitForTimeout(2000);
 
     // STATE PAGE (reuse same page)
     statePageHits.add(1);
-    const stateRes = await page.goto('https://paar.org.in/report?state=Uttarakhand', {
+    const stateRes = await page.goto('https://paar.org.in/report?state=West%20Bengal', {
       waitUntil: 'domcontentloaded',
       timeout: 60000,
     });
+
+    if (stateRes) {
+      console.log('stateRes status....', await stateRes.status());
+      console.log('stateRes ok....', await stateRes.ok());
+      console.log('stateRes url....', await stateRes.url());
+      console.log('stateRes headers....', await stateRes.headers());
+      console.log('stateRes text....', await stateRes.text());
+    } else {
+      console.log('inside else statement........', await stateRes)
+    }
 
     check(stateRes, {
       'State page loaded successfully': (r) => r !== null && r.status() === 200,
     });
 
+    check(stateRes, {
+      '❌ State page not loaded successfully': (r) => r === null || r.status() !== 200,
+    });
+
     await page.waitForTimeout(2000);
 
-    // // PRISON PAGE (reuse same page)
-    // const prisonRes = await page.goto('https://www.paar.org.in/report?prison=District%20Jail%20Pauri', {
-    //     waitUntil: 'domcontentloaded',
-    //     timeout: 60000,
-    //   });
-
-    //   check(prisonRes, {
-    //     'Prison page loaded successfully': (r) => r !== null && r.status() === 200,
-    //   });
-
-    //   await page.waitForTimeout(2000);
-
   } catch (err) {
+    console.log('Log error in test flow:', err.message || err.toString());
     console.error('Error in test flow:', err.message || err.toString());
   } finally {
     await page.close();
