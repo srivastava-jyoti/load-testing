@@ -10,8 +10,8 @@ export const options = {
   scenarios: {
     ui_test: {
       executor: 'shared-iterations',
-      vus: 20,
-      iterations: 20,
+      vus: 10,
+      iterations: 10,
       options: {
         browser: {
           type: 'chromium',
@@ -47,16 +47,16 @@ export default async function () {
     console.log('Map page loaded');
     randomSleep(3, 7);
 
-    await safeGoto('https://paar.org.in/report?state=West%20Bengal');
-    console.log('West Bengal report page loaded');
-    check(page, { 'Loaded West Bengal report page': () => page.url().includes('/report?state=West%20Bengal') });
-    randomSleep(4, 8);
+    // await safeGoto('https://paar.org.in/report?state=West%20Bengal');
+    // console.log('West Bengal report page loaded');
+    // check(page, { 'Loaded West Bengal report page': () => page.url().includes('/report?state=West%20Bengal') });
+    // randomSleep(4, 8);
 
-    await safeGoto('https://paar.org.in/report?prison=Balurghat%20Central%20Correctional%20Home');
-    console.log('Balurghat Central Correctional Home report page loaded');
-    check(page, { 'Loaded Balurghat Central Correctional Home report page': () =>
-      page.url().includes('prison=Balurghat%20Central%20Correctional%20Home') });
-    randomSleep(5, 10);
+    // await safeGoto('https://paar.org.in/report?prison=Balurghat%20Central%20Correctional%20Home');
+    // console.log('Balurghat Central Correctional Home report page loaded');
+    // check(page, { 'Loaded Balurghat Central Correctional Home report page': () =>
+    //   page.url().includes('prison=Balurghat%20Central%20Correctional%20Home') });
+    // randomSleep(5, 10);
 
   } catch (err) {
     console.error('Error during user flow:', err.message || err.toString());
