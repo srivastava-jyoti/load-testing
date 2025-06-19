@@ -10,15 +10,17 @@ export const options = {
   },
   scenarios: {
     browser_load: {
-      executor: 'per-vu-iterations',
-      vus: 1,
-      iterations: 1,
-      // executor: 'ramping-vus',
-      // startVUs: 2,
-      // stages: [
-      //   { duration: '100s', target: 2 },
-      // ],
-      // gracefulRampDown: '5s',
+      // executor: 'per-vu-iterations',
+      // vus: 1,
+      // iterations: 1,
+      executor: 'ramping-vus',
+      startVUs: 0,
+      stages: [
+        { duration: '3s', target: 16 },
+        { duration: '3', target: 32 },
+        { duration: '120s', target: 32 },
+      ],
+      gracefulRampDown: '5s',
       options: {
         browser: {
           type: 'chromium',
