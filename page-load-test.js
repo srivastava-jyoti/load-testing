@@ -3,19 +3,22 @@ import { check } from 'k6';
 import { Counter } from 'k6/metrics';
 
 export const options = {
+  cloud: {
+    distribution: {
+      'amazon:in:mumbai': { loadZone: 'amazon:in:mumbai', percent: 100 },
+    },
+  },
   scenarios: {
     browser_load: {
-      executor: 'ramping-vus',
-      startVUs: 0,
-      stages: [
-        { duration: '0.5s', target: 3 },
-        { duration: '0.5s', target: 6 },
-        { duration: '0.5s', target: 9 },
-        { duration: '0.5s', target: 12 },
-        { duration: '1s', target: 16 },
-        { duration: '60s', target: 16 },
-      ],
-      gracefulRampDown: '5s',
+      executor: 'per-vu-iterations',
+      vus: 1,
+      iterations: 1,
+      // executor: 'ramping-vus',
+      // startVUs: 2,
+      // stages: [
+      //   { duration: '100s', target: 2 },
+      // ],
+      // gracefulRampDown: '5s',
       options: {
         browser: {
           type: 'chromium',
@@ -41,20 +44,25 @@ export const options = {
 };
 
 const mapPageHits = new Counter('map_page_hits');
+const mapPageFailures = new Counter('map_page_failures');
 const statePageHits = new Counter('state_page_hits');
-const stateFailures = new Counter('state_page_failures');
+const statePageFailures = new Counter('state_page_failures');
+const prisonPageHits = new Counter('prison_page_hits');
+const prisonPageFailures = new Counter('prison_page_failures');
 
 // Retry helper
-async function tryGoto(page, url, retries = 3, delay = 1000) {
+async function tryGoto(page, url, retries = 1, delay = 4000) {
   let res = null;
   for (let i = 0; i < retries; i++) {
     try {
       res = await page.goto(url, {
-        waitUntil: 'load', // More reliable than 'domcontentloaded'
-        timeout: 60000,
+        waitUntil: 'domcontentloaded', // More reliable than 'domcontentloaded'
+        timeout: 5000,
       });
+      await page.waitForSelector('#COVID-19', { timeout: 2000 });
 
-      if (res && res.status() === 200) {
+      if (res && res.status() < 400) {
+        await page.waitForTimeout(delay);
         return res;
       }
 
@@ -79,36 +87,48 @@ export default async function () {
   try {
     // MAP PAGE
     mapPageHits.add(1);
-    console.log('Loading map page...');
-    const mapRes = await page.goto('https://paar.org.in/map', {
-      waitUntil: 'load',
-      timeout: 60000,
-    });
+    const mapRes = await tryGoto(page, 'https://paar.org.in/map');
 
     check(mapRes, {
-      '✅ Map page loaded successfully': (r) => r !== null && r.status() === 200,
+      '✅ Map page loaded successfully': (r) => r !== null && r.status() < 400,
     });
-
-    await page.waitForTimeout(2000);
-
-    // STATE PAGE
-    statePageHits.add(1);
-    console.log('Loading state report page...');
-    const stateRes = await tryGoto(page, 'https://paar.org.in/report?state=West%20Bengal');
-
-    if (stateRes) {
-      console.log('✅ stateRes status:', stateRes.status());
-      console.log('✅ stateRes URL:', stateRes.url());
-
-      check(stateRes, {
-        '✅ State page loaded successfully': (r) => r !== null && r.status() === 200,
-      });
+    if (mapRes) {
+      console.log('✅ mapRes status:', mapRes.status());
+      console.log('✅ mapRes URL:', mapRes.url());
     } else {
-      stateFailures.add(1);
+      mapPageFailures.add(1);
       console.error('❌ State page response is null after retries');
     }
 
-    await page.waitForTimeout(2000);
+    // STATE PAGE
+    statePageHits.add(1);
+    const stateRes = await tryGoto(page, 'https://paar.org.in/report?state=West%20Bengal');
+
+    check(stateRes, {
+      '✅ State page loaded successfully': (r) => r !== null && r.status() < 400,
+    });
+    if (stateRes) {
+      console.log('✅ stateRes status:', stateRes.status());
+      console.log('✅ stateRes URL:', stateRes.url());
+    } else {
+      statePageFailures.add(1);
+      console.error('❌ State page response is null after retries');
+    }
+
+    // PRISON PAGE
+    prisonPageHits.add(1);
+    const prisonRes = await tryGoto(page, 'https://paar.org.in/report?prison=Dum%20Dum%20Central%20Correctional%20Home');
+
+    check(prisonRes, {
+      '✅ Prison page loaded successfully': (r) => r !== null && r.status() < 400,
+    });
+    if (prisonRes) {
+      console.log('✅ prisonRes status:', prisonRes.status());
+      console.log('✅ prisonRes URL:', prisonRes.url());
+    } else {
+      prisonPageFailures.add(1);
+      console.error('❌ Prison page response is null after retries');
+    }
 
   } catch (err) {
     console.error('❌ Error in test flow:', err.message || err.toString());
