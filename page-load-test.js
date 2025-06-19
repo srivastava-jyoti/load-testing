@@ -61,7 +61,7 @@ async function tryGoto(page, url, retries = 1, delay = 4000) {
         waitUntil: 'domcontentloaded', // More reliable than 'domcontentloaded'
         timeout: 5000,
       });
-      await page.waitForSelector('#COVID-19', { timeout: 2000 });
+      // await page.waitForSelector('#COVID-19', { timeout: 2000 });
 
       if (res && res.status() < 400) {
         await page.waitForTimeout(delay);
