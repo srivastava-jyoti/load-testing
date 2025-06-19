@@ -89,7 +89,7 @@ export default async function () {
   try {
     // MAP PAGE
     mapPageHits.add(1);
-    const mapRes = await tryGoto(page, 'https://paar.org.in/hello.html');
+    const mapRes = await tryGoto(page, 'https://paar.org.in/map');
 
     check(mapRes, {
       '✅ Map page loaded successfully': (r) => r !== null && r.status() < 400,
@@ -99,12 +99,12 @@ export default async function () {
       console.log('✅ mapRes URL:', mapRes.url());
     } else {
       mapPageFailures.add(1);
-      console.error('❌ State page response is null after retries');
+      console.error('❌ Map page response is null after retries');
     }
 
     // STATE PAGE
     statePageHits.add(1);
-    const stateRes = await tryGoto(page, 'https://paar.org.in/hello.html');
+    const stateRes = await tryGoto(page, 'https://paar.org.in/report?state=West%20Bengal');
 
     check(stateRes, {
       '✅ State page loaded successfully': (r) => r !== null && r.status() < 400,
@@ -119,7 +119,7 @@ export default async function () {
 
     // PRISON PAGE
     prisonPageHits.add(1);
-    const prisonRes = await tryGoto(page, 'https://paar.org.in/hello.html');
+    const prisonRes = await tryGoto(page, 'https://paar.org.in/report?prison=Dum%20Dum%20Central%20Correctional%20Home');
 
     check(prisonRes, {
       '✅ Prison page loaded successfully': (r) => r !== null && r.status() < 400,
